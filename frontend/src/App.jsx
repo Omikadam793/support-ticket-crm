@@ -1,4 +1,4 @@
-import TicketDetail from './pages/Home';
+import CreateTicket from './pages/Home';
 
 export default function App() {
   return (
@@ -7,7 +7,7 @@ export default function App() {
         <strong>Support CRM Dashboard</strong>
       </nav>
       {/* Switch from <CreateTicket /> back to <Home /> */}
-      <TicketDetail />
+      <CreateTicket />
     </div>
   );
 }
