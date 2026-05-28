@@ -5,12 +5,15 @@ import { Link } from 'react-router-dom';
 export default function Home() {
   const [tickets, setTickets] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); // "all", "open", "pending", "resolved"
+  const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null); // Tracks API connection errors
   const [hoveredRowId, setHoveredRowId] = useState(null);
 
   // Fetch all tickets on component load
   useEffect(() => {
+    setLoading(true);
+    setApiError(null);
     axios.get("https://support-crm-backend.onrender.com/api/tickets")
       .then(res => {
         setTickets(res.data);
@@ -18,21 +21,19 @@ export default function Home() {
       })
       .catch(err => {
         console.error("Error fetching data:", err);
+        setApiError("Failed to fetch tickets from the backend. The server might be waking up—please try again shortly.");
         setLoading(false);
       });
   }, []);
 
-  // Filter logic: Handles BOTH text search AND status dropdown tabs simultaneously
+  // Filter logic
   const filteredTickets = tickets.filter(ticket => {
     const searchLower = searchTerm.toLowerCase();
-    
-    // 1. Text Search matching
     const matchesSearch = 
       (ticket.customer && ticket.customer.toLowerCase().includes(searchLower)) ||
       (ticket.title && ticket.title.toLowerCase().includes(searchLower)) ||
       (ticket.id && ticket.id.toString().includes(searchLower));
 
-    // 2. Status Pill matching (Normalizing case variations like "Closed" vs "resolved")
     let matchesStatus = true;
     if (statusFilter === "open") {
       matchesStatus = ticket.status?.toLowerCase() === "open";
@@ -45,63 +46,58 @@ export default function Home() {
     return matchesSearch && matchesStatus;
   });
 
-  // Helper function to return beautiful, modern status badge styles
   const getStatusBadgeStyles = (status) => {
-    const base = {
-      padding: '4px 12px',
-      borderRadius: '50px',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      textTransform: 'uppercase',
-      display: 'inline-block',
-      letterSpacing: '0.5px'
-    };
-
+    const base = { padding: '4px 12px', borderRadius: '50px', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', display: 'inline-block', letterSpacing: '0.5px' };
     const statusLower = status?.toLowerCase();
-    if (statusLower === 'resolved' || statusLower === 'closed') {
-      return { ...base, backgroundColor: '#def7ec', color: '#03543f' }; // Emerald Green
-    } else if (statusLower === 'pending' || statusLower === 'in progress') {
-      return { ...base, backgroundColor: '#fef3c7', color: '#92400e' }; // Amber Yellow
-    } else {
-      return { ...base, backgroundColor: '#e1effe', color: '#1e429f' }; // Indigo Blue
-    }
+    if (statusLower === 'resolved' || statusLower === 'closed') return { ...base, backgroundColor: '#def7ec', color: '#03543f' };
+    if (statusLower === 'pending' || statusLower === 'in progress') return { ...base, backgroundColor: '#fef3c7', color: '#92400e' };
+    return { ...base, backgroundColor: '#e1effe', color: '#1e429f' };
   };
 
-  if (loading) return <div style={{ padding: '32px', fontFamily: 'sans-serif', color: '#4a5568' }}>Loading CRM Dashboard...</div>;
+  // 1. ADDED: Clean, Centered Loading State UI
+  if (loading) {
+    return (
+      <div style={{ padding: '60px 24px', textAlign: 'center', fontFamily: '"Inter", sans-serif', color: '#4a5568' }}>
+        <div style={{
+          border: '4px solid #f3f3f3',
+          borderTop: '4px solid #2b6cb0',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto 16px auto'
+        }} />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#2d3748' }}>Synchronizing Dashboard Content...</h3>
+        <p style={{ color: '#718096', fontSize: '14px', marginTop: '4px' }}>Connecting to cloud services. Free-tier servers may take up to 90 seconds to fully spin up.</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: '"Inter", sans-serif', padding: '10px 0', color: '#2d3748' }}>
       <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '6px' }}>Support Agent Command Center</h2>
       <p style={{ color: '#718096', marginBottom: '24px', fontSize: '14px' }}>Monitor operational metrics, search active support payloads, and modify customer workspace accounts.</p>
 
+      {/* 2. ADDED: Basic API Error Handling Banner */}
+      {apiError && (
+        <div style={{ padding: '16px', backgroundColor: '#fff5f5', border: '1px solid #fed7d7', color: '#c53030', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>⚠️ <strong>API Error:</strong> {apiError}</span>
+          <button onClick={() => window.location.reload()} style={{ backgroundColor: '#c53030', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>Retry Connection</button>
+        </div>
+      )}
+
       {/* --- Search & Status Filter Toolbars --- */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '16px', 
-        marginBottom: '24px', 
-        flexWrap: 'wrap',
-        alignItems: 'center'
-      }}>
-        {/* Search Input Box */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
         <input 
           type="text" 
           placeholder="Search by Ticket ID, Customer Name, or Subject..." 
           value={searchTerm}
+          disabled={!!apiError}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ 
-            padding: '12px 16px', 
-            flex: '1',
-            minWidth: '280px',
-            maxWidth: '450px', 
-            borderRadius: '6px', 
-            border: '1px solid #cbd5e0',
-            fontSize: '14px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            outline: 'none'
-          }}
+          style={{ padding: '12px 16px', flex: '1', minWidth: '280px', maxWidth: '450px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', outline: 'none', backgroundColor: apiError ? '#f7fafc' : '#fff' }}
         />
 
-        {/* Dynamic Status Action Filter */}
         <div style={{ display: 'flex', gap: '8px', backgroundColor: '#edf2f7', padding: '4px', borderRadius: '8px' }}>
           {[
             { id: 'all', label: 'All Tickets' },
@@ -111,18 +107,14 @@ export default function Home() {
           ].map(tab => (
             <button
               key={tab.id}
+              disabled={!!apiError}
               onClick={() => setStatusFilter(tab.id)}
               style={{
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer',
+                padding: '8px 16px', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
                 backgroundColor: statusFilter === tab.id ? '#ffffff' : 'transparent',
                 color: statusFilter === tab.id ? '#2b6cb0' : '#4a5568',
                 boxShadow: statusFilter === tab.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.15s ease', opacity: apiError ? 0.5 : 1
               }}
             >
               {tab.label}
@@ -145,20 +137,27 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- Tickets Data Table Workspace --- */}
-      {filteredTickets.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#718096' }}>
-          No records matching the selected filter layout partition.
+      {/* --- Tickets Data Table Workspace & Smart Empty States --- */}
+      {apiError ? (
+        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #edf2f7', color: '#a0aec0' }}>
+          Data pipeline inaccessible due to network errors.
+        </div>
+      ) : tickets.length === 0 ? (
+        <div style={{ padding: '60px 24px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '2px dashed #e2e8f0', color: '#4a5568', maxWidth: '600px', margin: '40px auto' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '8px', color: '#2d3748' }}>No Tickets Created Yet</h3>
+          <p style={{ color: '#718096', fontSize: '14px', marginBottom: '24px', lineHeight: '1.5' }}>The database workspace log partition is currently empty. Get started by creating your first support ticket tracking payload.</p>
+          <Link to="/create" style={{ backgroundColor: '#2b6cb0', color: 'white', textDecoration: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: '600', fontSize: '14px', display: 'inline-block', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>+ Create First Ticket</Link>
+        </div>
+      ) : filteredTickets.length === 0 ? (
+        <div style={{ padding: '50px 24px', textAlign: 'center', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#718096', marginTop: '20px' }}>
+          <div style={{ fontSize: '36px', marginBottom: '12px' }}>🔍</div>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '6px', color: '#4a5568' }}>No Matching Tickets Found</h3>
+          <p style={{ fontSize: '14px', color: '#718096', maxWidth: '400px', margin: '0 auto 16px auto', lineHeight: '1.4' }}>Your search query "{searchTerm}" or selected status filter did not return any records in this sequence.</p>
+          <button onClick={() => { setSearchTerm(""); setStatusFilter("all"); }} style={{ background: 'none', border: 'none', color: '#2b6cb0', fontWeight: '600', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline' }}>Reset All Filters</button>
         </div>
       ) : (
-        <div style={{ 
-          width: '100%', 
-          overflowX: 'auto', 
-          WebkitOverflowScrolling: 'touch',
-          border: '1px solid #e2e8f0', 
-          borderRadius: '8px', 
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' 
-        }}>
+        <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
           <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', backgroundColor: '#ffffff', textAlign: 'left', fontSize: '14px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #edf2f7' }}>
@@ -175,35 +174,18 @@ export default function Home() {
                   key={ticket.id} 
                   onMouseEnter={() => setHoveredRowId(ticket.id)}
                   onMouseLeave={() => setHoveredRowId(null)}
-                  style={{ 
-                    borderBottom: '1px solid #edf2f7',
-                    backgroundColor: hoveredRowId === ticket.id ? '#f8fafc' : '#ffffff',
-                    transition: 'background-color 0.15s ease'
-                  }}
+                  style={{ borderBottom: '1px solid #edf2f7', backgroundColor: hoveredRowId === ticket.id ? '#f8fafc' : '#ffffff', transition: 'background-color 0.15s ease' }}
                 >
                   <td style={{ padding: '16px', fontWeight: '600', color: '#718096' }}>#{ticket.id}</td>
                   <td style={{ padding: '16px', fontWeight: '500' }}>{ticket.customer}</td>
                   <td style={{ padding: '16px', color: '#4a5568' }}>{ticket.title}</td>
                   <td style={{ padding: '16px' }}>
-                    <span style={getStatusBadgeStyles(ticket.status)}>
-                      {ticket.status}
-                    </span>
+                    <span style={getStatusBadgeStyles(ticket.status)}>{ticket.status}</span>
                   </td>
                   <td style={{ padding: '16px', textAlign: 'center' }}>
                     <Link 
                       to={`/ticket/${ticket.id}`} 
-                      style={{ 
-                        color: '#ffffff', 
-                        backgroundColor: '#2b6cb0',
-                        textDecoration: 'none', 
-                        fontWeight: '600',
-                        padding: '6px 14px',
-                        borderRadius: '4px',
-                        fontSize: '13px',
-                        display: 'inline-block',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                        transition: 'background-color 0.2s'
-                      }}
+                      style={{ color: '#ffffff', backgroundColor: '#2b6cb0', textDecoration: 'none', fontWeight: '600', padding: '6px 14px', borderRadius: '4px', fontSize: '13px', display: 'inline-block', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'background-color 0.2s' }}
                       onMouseEnter={(e) => e.target.style.backgroundColor = '#2c5282'}
                       onMouseLeave={(e) => e.target.style.backgroundColor = '#2b6cb0'}
                     >

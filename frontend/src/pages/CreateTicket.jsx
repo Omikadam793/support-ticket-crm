@@ -1,134 +1,148 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function CreateTicket() {
-  // 1. Set up state variables to track every input field live
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
-  const [description, setDescription] = useState("");
+  const navigate = useNavigate();
   
-  // States for tracking user feedback
-  const [message, setMessage] = useState("");
-  const [isError, setIsError] = useState(false);
+  // Form input fields state
+  const [customer, setCustomer] = useState("");
+  const [email, setEmail] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
-  // 2. Handle the Form Submission
+  // Operational pipeline feedback states
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState("");
+  const [apiError, setApiError] = useState("");
+
   const handleSubmit = (e) => {
-    e.preventDefault(); // Prevents the browser from reloading the entire page
+    e.preventDefault();
+    setValidationError("");
+    setApiError("");
 
-    // Basic validation check
-    if (!name || !email || !subject || !description) {
-      setIsError(true);
-      setMessage("Please fill out all required fields.");
+    // 1. ADDED: Front-end Form Input Validation Error Checks
+    if (!customer.trim() || !email.trim() || !title.trim() || !description.trim()) {
+      setValidationError("Invalid form data. Please fill out all input parameters completely before submitting.");
       return;
     }
 
-    // Pack the state variables into a structured object matching what the backend expects
-    const ticketData = {
-      customer: name, // Maps 'name' to the 'customer' field in your database
-      email: email,
-      title: subject, // Maps 'subject' to the 'title' field in your database
-      description: description,
-      status: "open"  // New tickets default to an 'open' status
+    if (!email.includes("@")) {
+      setValidationError("Invalid email formatting. Please enter a qualified email reference link.");
+      return;
+    }
+
+    // Prepare ticket schema payload matching our backend expectations
+    const newTicket = {
+      customer: customer.trim(),
+      email: email.trim(),
+      title: title.trim(),
+      description: description.trim()
     };
 
-    // 3. Fire the POST request over to the backend server
-    axios.post("https://support-crm-backend.onrender.com/api/tickets", ticketData)      .then((response) => {
-        setIsError(false);
-        setMessage("Ticket created successfully! Ticket ID: " + response.data.id);
-        
-        // Clear out the form inputs so the user can type a fresh ticket if they want
-        setName("");
-        setEmail("");
-        setSubject("");
-        setDescription("");
+    // 2. ADDED: Trigger Button Loading Execution State
+    setIsSubmitting(true);
+
+    axios.post("https://support-crm-backend.onrender.com/api/tickets", newTicket)
+      .then(res => {
+        setIsSubmitting(false);
+        // Navigate securely back to main operational panel on success
+        navigate("/");
       })
-      .catch((error) => {
-        console.error("Error creating ticket:", error);
-        setIsError(true);
-        setMessage("Failed to create ticket. Is your backend server running?");
+      .catch(err => {
+        console.error("Failed to post payload:", err);
+        // 3. ADDED: API Network Request Error Protection
+        setApiError("Failed API network request. Secure routing pipelines could not finalize records. Please verify server status.");
+        setIsSubmitting(false);
       });
   };
 
   return (
-    <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '500px', margin: '0 auto' }}>
-      <h2>Submit a New Support Ticket</h2>
-      
-      {/* --- Success or Error Alert Message Banner --- */}
-      {message && (
-        <div style={{
-          padding: '12px',
-          marginBottom: '16px',
-          borderRadius: '4px',
-          backgroundColor: isError ? '#ffebeb' : '#e6fce6',
-          color: isError ? '#cc0000' : '#006600',
-          border: isError ? '1px solid #ffcccc' : '1px solid #b3ffb3'
-        }}>
-          {message}
+    <div style={{ maxWidth: '550px', margin: '20px auto', fontFamily: '"Inter", sans-serif', padding: '0 10px', color: '#2d3748' }}>
+      <h2 style={{ fontSize: '22px', fontWeight: '700', marginBottom: '6px' }}>Initialize New Support Case</h2>
+      <p style={{ color: '#718096', fontSize: '14px', marginBottom: '24px' }}>Log user incoming tickets securely straight down into our core operational indexing service database stack.</p>
+
+      {/* ERROR HANDLER A: Form Field Invalidation Warn Box */}
+      {validationError && (
+        <div style={{ padding: '12px 16px', backgroundColor: '#fff5f5', border: '1px solid #fed7d7', color: '#c53030', borderRadius: '6px', fontSize: '14px', marginBottom: '20px', fontWeight: '500' }}>
+          ❌ {validationError}
         </div>
       )}
 
-      {/* --- The Form --- */}
+      {/* ERROR HANDLER B: Server API Endpoint Exception Alert Box */}
+      {apiError && (
+        <div style={{ padding: '12px 16px', backgroundColor: '#fff5f5', border: '1px solid #fed7d7', color: '#c53030', borderRadius: '6px', fontSize: '14px', marginBottom: '20px', fontWeight: '500' }}>
+          ⚠️ {apiError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        
         <div>
-          <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Your Name:</label>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#4a5568' }}>Customer Name:</label>
           <input 
             type="text" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-            placeholder="John Doe"
+            value={customer} 
+            onChange={(e) => setCustomer(e.target.value)}
+            placeholder="e.g. Rahul Sharma"
+            disabled={isSubmitting}
+            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none' }}
           />
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Email Address:</label>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#4a5568' }}>Email Address:</label>
           <input 
             type="email" 
             value={email} 
             onChange={(e) => setEmail(e.target.value)}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-            placeholder="john@example.com"
+            placeholder="e.g. rahul@example.com"
+            disabled={isSubmitting}
+            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none' }}
           />
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Subject / Issue Title:</label>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#4a5568' }}>Subject Title:</label>
           <input 
             type="text" 
-            value={subject} 
-            onChange={(e) => setSubject(e.target.value)}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-            placeholder="Screen is broken / Software crashing"
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Brief operational issue summary..."
+            disabled={isSubmitting}
+            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none' }}
           />
         </div>
 
         <div>
-          <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Detailed Description:</label>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#4a5568' }}>Issue Description:</label>
           <textarea 
-            rows="5"
+            rows="5" 
             value={description} 
             onChange={(e) => setDescription(e.target.value)}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc', resize: 'vertical' }}
-            placeholder="Provide as much details about the issue as possible..."
+            placeholder="Provide complete comprehensive troubleshooting context parameters here..."
+            disabled={isSubmitting}
+            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none', fontFamily: 'inherit' }}
           />
         </div>
 
         <button 
           type="submit" 
+          disabled={isSubmitting}
           style={{ 
-            padding: '12px', 
-            backgroundColor: '#0066cc', 
+            backgroundColor: isSubmitting ? '#a0aec0' : '#2b6cb0', 
             color: 'white', 
             border: 'none', 
-            borderRadius: '4px', 
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            fontSize: '16px' 
+            padding: '12px', 
+            borderRadius: '6px', 
+            fontWeight: '700', 
+            fontSize: '15px', 
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+            marginTop: '8px',
+            transition: 'background-color 0.2s'
           }}
         >
-          Submit Ticket
+          {isSubmitting ? "Processing Ticket Payload..." : "Dispatch System Ticket"}
         </button>
       </form>
     </div>
