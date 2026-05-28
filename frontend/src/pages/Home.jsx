@@ -6,6 +6,7 @@ export default function Home() {
   const [tickets, setTickets] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [hoveredRowId, setHoveredRowId] = useState(null); // Track mouse position for row highlight
 
   // Fetch all tickets on component load
   useEffect(() => {
@@ -20,94 +21,142 @@ export default function Home() {
       });
   }, []);
 
-  // CRITICAL FIX: Define filteredTickets here so the component can read it below
+  // Filter logic for quick searching
   const filteredTickets = tickets.filter(ticket => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      ticket.customer.toLowerCase().includes(searchLower) ||
-      ticket.title.toLowerCase().includes(searchLower) ||
-      ticket.id.toString().includes(searchLower)
+      (ticket.customer && ticket.customer.toLowerCase().includes(searchLower)) ||
+      (ticket.title && ticket.title.toLowerCase().includes(searchLower)) ||
+      (ticket.id && ticket.id.toString().includes(searchLower))
     );
   });
 
-  if (loading) return <div style={{ padding: '24px' }}>Loading CRM Dashboard...</div>;
+  // Helper function to return beautiful, modern status badge styles
+  const getStatusBadgeStyles = (status) => {
+    const base = {
+      padding: '4px 12px',
+      borderRadius: '50px', // Complete round capsule pill
+      fontSize: '12px',
+      fontWeight: 'bold',
+      textTransform: 'uppercase',
+      display: 'inline-block',
+      letterSpacing: '0.5px'
+    };
+
+    if (status === 'resolved' || status === 'Closed') {
+      return { ...base, backgroundColor: '#def7ec', color: '#03543f' }; // Deep emerald green
+    } else if (status === 'pending' || status === 'In Progress') {
+      return { ...base, backgroundColor: '#fef3c7', color: '#92400e' }; // Deep amber yellow
+    } else {
+      return { ...base, backgroundColor: '#e1effe', color: '#1e429f' }; // Corporate indigo blue
+    }
+  };
+
+  if (loading) return <div style={{ padding: '32px', fontFamily: 'sans-serif', color: '#4a5568' }}>Loading CRM Dashboard...</div>;
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '20px' }}>
-      <h2>Support Agent Command Center</h2>
+    <div style={{ fontFamily: '"Inter", sans-serif', padding: '10px 0', color: '#2d3748' }}>
+      <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '6px' }}>Support Agent Command Center</h2>
+      <p style={{ color: '#718096', marginBottom: '24px', fontSize: '14px' }}>Monitor operational metrics, search active support payloads, and modify customer workspace accounts.</p>
 
       {/* --- Search Filter Controls --- */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '24px' }}>
         <input 
           type="text" 
           placeholder="Search by Ticket ID, Customer Name, or Subject..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: '10px', width: '100%', maxWidth: '400px', borderRadius: '4px', border: '1px solid #ccc' }}
+          style={{ 
+            padding: '12px 16px', 
+            width: '100%', 
+            maxWidth: '450px', 
+            borderRadius: '6px', 
+            border: '1px solid #cbd5e0',
+            fontSize: '14px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            outline: 'none',
+            transition: 'border-color 0.2s'
+          }}
         />
       </div>
 
       {/* --- CRM Metrics Overview Ribbons --- */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '24px' }}>
-        <div style={{ padding: '16px', backgroundColor: '#ebf8ff', borderRadius: '6px', flex: 1, borderLeft: '4px solid #3182ce' }}>
-          <strong>Total Managed Cases</strong>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '4px' }}>{tickets.length}</div>
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px' }}>
+        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: 1, border: '1px solid #e2e8f0', borderLeft: '4px solid #2b6cb0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <strong style={{ color: '#4a5568', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Managed Cases</strong>
+          <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>{tickets.length}</div>
         </div>
-        <div style={{ padding: '16px', backgroundColor: '#fffaf0', borderRadius: '6px', flex: 1, borderLeft: '4px solid #dd6b20' }}>
-          <strong>Active / Open Tickets</strong>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '4px' }}>
-            {tickets.filter(t => t.status !== 'resolved').length}
+        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: 1, border: '1px solid #e2e8f0', borderLeft: '4px solid #dd6b20', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <strong style={{ color: '#4a5568', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active / Open Tickets</strong>
+          <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>
+            {tickets.filter(t => t.status !== 'resolved' && t.status !== 'Closed').length}
           </div>
         </div>
       </div>
 
       {/* --- Tickets Data Table Workspace --- */}
       {filteredTickets.length === 0 ? (
-        <p>No matching tickets found.</p>
+        <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#718096' }}>
+          No matching records located within this data partition.
+        </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f2f2f2', textAlign: 'left' }}>
-              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>ID</th>
-              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Customer</th>
-              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Title</th>
-              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Status</th>
-              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTickets.map(ticket => (
-              <tr key={ticket.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px' }}>#{ticket.id}</td>
-                <td style={{ padding: '12px' }}>{ticket.customer}</td>
-                <td style={{ padding: '12px' }}>{ticket.title}</td>
-                <td style={{ padding: '12px' }}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: ticket.status === 'resolved' ? '#e6fce6' : '#fff3cd',
-                    color: ticket.status === 'resolved' ? '#006600' : '#856404'
-                  }}>{ticket.status}</span>
-                </td>
-                <td style={{ padding: '12px' }}>
-                  <Link 
-                    to={`/ticket/${ticket.id}`} 
-                    style={{ 
-                      color: '#2b6cb0', 
-                      textDecoration: 'none', 
-                      fontWeight: 'bold',
-                      border: '1px solid #2b6cb0',
-                      padding: '4px 8px',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    Manage
-                  </Link>
-                </td>
+        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#ffffff', textAlign: 'left', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #edf2f7' }}>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>ID</th>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Customer</th>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Title</th>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Status</th>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568', textAlign: 'center' }}>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredTickets.map(ticket => (
+                <tr 
+                  key={ticket.id} 
+                  onMouseEnter={() => setHoveredRowId(ticket.id)}
+                  onMouseLeave={() => setHoveredRowId(null)}
+                  style={{ 
+                    borderBottom: '1px solid #edf2f7',
+                    backgroundColor: hoveredRowId === ticket.id ? '#f8fafc' : '#ffffff', // Dynamic row highlighting
+                    transition: 'background-color 0.15s ease'
+                  }}
+                >
+                  <td style={{ padding: '16px', fontWeight: '600', color: '#718096' }}>#{ticket.id}</td>
+                  <td style={{ padding: '16px', fontWeight: '500' }}>{ticket.customer}</td>
+                  <td style={{ padding: '16px', color: '#4a5568' }}>{ticket.title}</td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={getStatusBadgeStyles(ticket.status)}>
+                      {ticket.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: '16px', textAlign: 'center' }}>
+                    <Link 
+                      to={`/ticket/${ticket.id}`} 
+                      style={{ 
+                        color: '#ffffff', 
+                        backgroundColor: '#2b6cb0',
+                        textDecoration: 'none', 
+                        fontWeight: '600',
+                        padding: '6px 14px',
+                        borderRadius: '4px',
+                        fontSize: '13px',
+                        display: 'inline-block',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#2c5282'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = '#2b6cb0'}
+                    >
+                      Manage
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
