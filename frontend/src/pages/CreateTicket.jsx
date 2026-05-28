@@ -33,7 +33,7 @@ export default function CreateTicket() {
     };
 
     // 3. Fire the POST request over to the backend server
-    axios.post("http://localhost:8080/api/tickets", ticketData)      .then((response) => {
+    axios.post("https://support-crm-backend.onrender.com/api/tickets", ticketData)      .then((response) => {
         setIsError(false);
         setMessage("Ticket created successfully! Ticket ID: " + response.data.id);
         

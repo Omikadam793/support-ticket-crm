@@ -11,7 +11,7 @@ export default function Home() {
 
   // Step 1: Fetch all tickets from the backend on page load
   useEffect(() => {
-    axios.get("http://localhost:8080/api/tickets")   
+    axios.get("https://support-crm-backend.onrender.com/api/tickets")   
        .then(res => {
         setTickets(res.data);
       })

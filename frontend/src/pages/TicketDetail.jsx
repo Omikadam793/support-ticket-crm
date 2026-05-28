@@ -16,7 +16,7 @@ export default function TicketDetail() {
 
   // Step 1: Fetch the single ticket's current details on page load
   useEffect(() => {
-    axios.get(`http://localhost:8080/api/tickets`)
+    axios.get("https://support-crm-backend.onrender.com/api/tickets")
       .then(res => {
         // Since we are using an in-memory array backend, let's find our specific ticket
         const foundTicket = res.data.find(t => t.id === ticketId);
@@ -41,7 +41,7 @@ export default function TicketDetail() {
     };
 
     // Triggering the HTTP PUT request to modify the specific data record
-    axios.put(`http://localhost:8080/api/tickets/${ticketId}`, updatedData)
+    axios.put(`https://support-crm-backend.onrender.com/api/tickets/${ticketId}`, updatedData)
       .then(res => {
         setMessage("Ticket updated successfully!");
         // Clear message after 3 seconds
