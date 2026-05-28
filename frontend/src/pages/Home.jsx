@@ -81,12 +81,12 @@ export default function Home() {
       </div>
 
       {/* --- CRM Metrics Overview Ribbons --- */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px' }}>
-        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: 1, border: '1px solid #e2e8f0', borderLeft: '4px solid #2b6cb0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', flexWrap: 'wrap' }}>
+        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: '1 1 200px', border: '1px solid #e2e8f0', borderLeft: '4px solid #2b6cb0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <strong style={{ color: '#4a5568', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Managed Cases</strong>
           <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>{tickets.length}</div>
         </div>
-        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: 1, border: '1px solid #e2e8f0', borderLeft: '4px solid #dd6b20', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: '1 1 200px', border: '1px solid #e2e8f0', borderLeft: '4px solid #dd6b20', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
           <strong style={{ color: '#4a5568', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active / Open Tickets</strong>
           <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>
             {tickets.filter(t => t.status !== 'resolved' && t.status !== 'Closed').length}
@@ -100,8 +100,16 @@ export default function Home() {
           No matching records located within this data partition.
         </div>
       ) : (
-        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#ffffff', textAlign: 'left', fontSize: '14px' }}>
+        /* RESPONSIVE DIV CONTAINER WRAPPER */
+        <div style={{ 
+          width: '100%', 
+          overflowX: 'auto', 
+          WebkitOverflowScrolling: 'touch', // Smooth touch swiping for mobile devices
+          border: '1px solid #e2e8f0', 
+          borderRadius: '8px', 
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' 
+        }}>
+          <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', backgroundColor: '#ffffff', textAlign: 'left', fontSize: '14px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #edf2f7' }}>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>ID</th>
