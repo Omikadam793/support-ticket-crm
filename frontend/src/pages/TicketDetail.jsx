@@ -1,26 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-// 1. Import the URL parameter reader hook
+// 1. Import the URL parameter reader hook from React Router
 import { useParams } from 'react-router-dom';
 
 export default function TicketDetail() {
-  // 2. Read the dynamic :id parameter straight out of the active browser link
+  // 2. Read the dynamic :id parameter straight out of the active browser URL path
   const { id } = useParams(); 
-  const ticketId = parseInt(id); // Convert the text ID into a clean number
-
-  const [ticket, setTicket] = useState(null);
-  const [status, setStatus] = useState("open");
-  const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-}
-  // ... rest of your code handles the data fetch and PUT requests exactly the same way!
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-export default function TicketDetail() {
-  // Hardcoded for now until we hook up React Router navigation in the next steps
-  const ticketId = 2; 
+  const ticketId = parseInt(id); // Convert the text parameter ID into a clean number
 
   // States for storing data from the backend
   const [ticket, setTicket] = useState(null);
@@ -31,11 +17,11 @@ export default function TicketDetail() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  // Step 1: Fetch the single ticket's current details on page load
+  // Step 1: Fetch the single ticket's current details on page load based on URL ID
   useEffect(() => {
     axios.get("https://support-crm-backend.onrender.com/api/tickets")
       .then(res => {
-        // Since we are using an in-memory array backend, let's find our specific ticket
+        // Find our specific ticket based on the dynamic ID from the URL link
         const foundTicket = res.data.find(t => t.id === ticketId);
         if (foundTicket) {
           setTicket(foundTicket);
