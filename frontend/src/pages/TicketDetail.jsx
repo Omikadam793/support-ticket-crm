@@ -13,7 +13,7 @@ export default function TicketDetail() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-
+}
   // ... rest of your code handles the data fetch and PUT requests exactly the same way!
 import { useState, useEffect } from 'react';
 import axios from 'axios';
