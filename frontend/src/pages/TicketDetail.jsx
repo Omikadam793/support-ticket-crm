@@ -1,5 +1,22 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+// 1. Import the URL parameter reader hook
+import { useParams } from 'react-router-dom';
+
+export default function TicketDetail() {
+  // 2. Read the dynamic :id parameter straight out of the active browser link
+  const { id } = useParams(); 
+  const ticketId = parseInt(id); // Convert the text ID into a clean number
+
+  const [ticket, setTicket] = useState(null);
+  const [status, setStatus] = useState("open");
+  const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  // ... rest of your code handles the data fetch and PUT requests exactly the same way!
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function TicketDetail() {
   // Hardcoded for now until we hook up React Router navigation in the next steps
