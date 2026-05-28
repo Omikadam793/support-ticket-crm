@@ -1,150 +1,114 @@
-// 1. Add this import statement at the very top of Home.jsx:
-import { Link } from 'react-router-dom';
-
-// 2. Inside your table rendering structure, update the JSX to include a "View" link:
-<table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-  <thead>
-    <tr style={{ backgroundColor: '#f2f2f2', textAlign: 'left' }}>
-      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>ID</th>
-      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Customer</th>
-      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Title</th>
-      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Status</th>
-      <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Action</th> {/* New Header */}
-    </tr>
-  </thead>
-  <tbody>
-    {filteredTickets.map(ticket => (
-      <tr key={ticket.id} style={{ borderBottom: '1px solid #eee' }}>
-        <td style={{ padding: '12px' }}>#{ticket.id}</td>
-        <td style={{ padding: '12px' }}>{ticket.customer}</td>
-        <td style={{ padding: '12px' }}>{ticket.title}</td>
-        <td style={{ padding: '12px' }}>
-          <span style={{
-            padding: '4px 8px',
-            borderRadius: '4px',
-            backgroundColor: ticket.status === 'resolved' ? '#e6fce6' : '#fff3cd',
-            color: ticket.status === 'resolved' ? '#006600' : '#856404'
-          }}>{ticket.status}</span>
-        </td>
-        {/* New Actions Column Cell with Dynamic ID Link */}
-        <td style={{ padding: '12px' }}>
-          <Link 
-            to={`/ticket/${ticket.id}`} 
-            style={{ 
-              color: '#2b6cb0', 
-              textDecoration: 'none', 
-              fontWeight: 'bold',
-              border: '1px solid #2b6cb0',
-              padding: '4px 8px',
-              borderRadius: '4px'
-            }}
-          >
-            Manage
-          </Link>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
-  // State for storing data from the backend
   const [tickets, setTickets] = useState([]);
-  
-  // States for handling search inputs and dropdowns
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
 
-  // Step 1: Fetch all tickets from the backend on page load
+  // Fetch all tickets on component load
   useEffect(() => {
-    axios.get("https://support-crm-backend.onrender.com/api/tickets")   
-       .then(res => {
+    axios.get("https://support-crm-backend.onrender.com/api/tickets")
+      .then(res => {
         setTickets(res.data);
+        setLoading(false);
       })
       .catch(err => {
-        console.error("Failed to fetch tickets:", err);
+        console.error("Error fetching data:", err);
+        setLoading(false);
       });
   }, []);
 
-  // Step 2: Filter tickets dynamically as user types or clicks
+  // CRITICAL FIX: Define filteredTickets here so the component can read it below
   const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = 
-      ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.customer.toLowerCase().includes(searchTerm.toLowerCase());
-      
-    const matchesFilter = 
-      statusFilter === "all" || ticket.status === statusFilter;
-
-    return matchesSearch && matchesFilter;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      ticket.customer.toLowerCase().includes(searchLower) ||
+      ticket.title.toLowerCase().includes(searchLower) ||
+      ticket.id.toString().includes(searchLower)
+    );
   });
 
-  return (
-    <div style={{ padding: '24px', fontFamily: 'sans-serif' }}>
-      <h2>Support Tickets Dashboard</h2>
+  if (loading) return <div style={{ padding: '24px' }}>Loading CRM Dashboard...</div>;
 
-      {/* --- Search and Filter Controls --- */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+  return (
+    <div style={{ fontFamily: 'sans-serif', padding: '20px' }}>
+      <h2>Support Agent Command Center</h2>
+
+      {/* --- Search Filter Controls --- */}
+      <div style={{ marginBottom: '20px' }}>
         <input 
           type="text" 
-          placeholder="Search by title or customer..." 
+          placeholder="Search by Ticket ID, Customer Name, or Subject..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: '8px', width: '300px', borderRadius: '4px', border: '1px solid #ccc' }}
+          style={{ padding: '10px', width: '100%', maxWidth: '400px', borderRadius: '4px', border: '1px solid #ccc' }}
         />
-
-        <select 
-          value={statusFilter} 
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-        >
-          <option value="all">All Statuses</option>
-          <option value="open">Open</option>
-          <option value="resolved">Resolved</option>
-        </select>
       </div>
 
-      {/* --- The Data Display Table --- */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f4f4f4', borderBottom: '2px solid #ddd' }}>
-            <th style={{ padding: '12px' }}>ID</th>
-            <th style={{ padding: '12px' }}>Title</th>
-            <th style={{ padding: '12px' }}>Customer</th>
-            <th style={{ padding: '12px' }}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredTickets.length > 0 ? (
-            filteredTickets.map(ticket => (
-              <tr key={ticket.id} style={{ borderBottom: '1px solid #ddd' }}>
-                <td style={{ padding: '12px' }}>{ticket.id}</td>
-                <td style={{ padding: '12px', fontWeight: 'bold' }}>{ticket.title}</td>
+      {/* --- CRM Metrics Overview Ribbons --- */}
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '24px' }}>
+        <div style={{ padding: '16px', backgroundColor: '#ebf8ff', borderRadius: '6px', flex: 1, borderLeft: '4px solid #3182ce' }}>
+          <strong>Total Managed Cases</strong>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '4px' }}>{tickets.length}</div>
+        </div>
+        <div style={{ padding: '16px', backgroundColor: '#fffaf0', borderRadius: '6px', flex: 1, borderLeft: '4px solid #dd6b20' }}>
+          <strong>Active / Open Tickets</strong>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '4px' }}>
+            {tickets.filter(t => t.status !== 'resolved').length}
+          </div>
+        </div>
+      </div>
+
+      {/* --- Tickets Data Table Workspace --- */}
+      {filteredTickets.length === 0 ? (
+        <p>No matching tickets found.</p>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f2f2f2', textAlign: 'left' }}>
+              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>ID</th>
+              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Customer</th>
+              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Title</th>
+              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Status</th>
+              <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTickets.map(ticket => (
+              <tr key={ticket.id} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '12px' }}>#{ticket.id}</td>
                 <td style={{ padding: '12px' }}>{ticket.customer}</td>
+                <td style={{ padding: '12px' }}>{ticket.title}</td>
                 <td style={{ padding: '12px' }}>
                   <span style={{
-                    padding: '4px 8px', 
-                    borderRadius: '4px', 
-                    fontSize: '12px',
-                    backgroundColor: ticket.status === 'open' ? '#ffeec2' : '#d2f8d2',
-                    color: ticket.status === 'open' ? '#b7791f' : '#22543d'
-                  }}>
-                    {ticket.status.toUpperCase()}
-                  </span>
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: ticket.status === 'resolved' ? '#e6fce6' : '#fff3cd',
+                    color: ticket.status === 'resolved' ? '#006600' : '#856404'
+                  }}>{ticket.status}</span>
+                </td>
+                <td style={{ padding: '12px' }}>
+                  <Link 
+                    to={`/ticket/${ticket.id}`} 
+                    style={{ 
+                      color: '#2b6cb0', 
+                      textDecoration: 'none', 
+                      fontWeight: 'bold',
+                      border: '1px solid #2b6cb0',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    Manage
+                  </Link>
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="4" style={{ padding: '12px', textAlign: 'center', color: '#888' }}>
-                No tickets found matching your criteria.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
