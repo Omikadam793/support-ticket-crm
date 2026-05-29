@@ -3,7 +3,7 @@
 A production-ready, full-stack Customer Support Ticketing CRM application engineered as part of the Datastraw Assessment Test for the Data Engineer Intern position. This platform empowers support agents to monitor operational metrics, log incoming customer tracking payloads securely, execute real-time property searches, filter by lifecycle statuses, and manage individual issue resolution workspaces.
 
 ## 🚀 Live Production Links
-* **Live Frontend Interface (Vercel):** https://support-crm-frontend-11bep7tdd-omi-kadam-s-projects.vercel.app/
+* **Live Frontend Interface (Vercel):** https://support-crm-frontend.vercel.app/
 * **Live Backend Engine API (Render):** https://support-crm-backend.onrender.com
 * **Walkthrough Demo Video:** *[Paste your Loom/Drive video link here]*
 
