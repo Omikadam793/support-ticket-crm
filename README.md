@@ -41,13 +41,13 @@ cd backend
 npm install
 npm start
 
-2. Initialize the Frontend Workspace
+### 2. Initialize the Frontend Workspace
 
 cd ../frontend
 npm install
 npm run dev
 
-🧠 Technical Approaches & Overcoming Challenges
+### 🧠 Technical Approaches & Overcoming Challenges
 
     CI/CD Build Pipeline Restructuring: During production compilation, the bundler encountered strict duplicate component layout exports. I ran local npm run build diagnostic checks to sweep the source structure, isolated the conflicting state hook contexts, and deployed clean rewrite rules to funnel trailing paths securely back to the React root template.
 
