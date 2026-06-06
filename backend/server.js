@@ -1,78 +1,103 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import db from './database.js'; // Imports your connection pool configuration
+
+dotenv.config();
 
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// In-memory data store
-let ticketsDatabase = [
-    { id: 1, title: "Screen is broken", customer: "John Doe", status: "open", email: "john@example.com", description: "Glass shattered", notes: "" }
-];
-
-// Routes
+// Main status validation route
 app.get('/', (req, res) => {
-    res.send('Support CRM Backend API is Running!');
+    res.send('Support CRM Backend API is Running on PostgreSQL cloud sync!');
 });
 
-// 1. GET Route: Fetch all entries
-app.get('/api/tickets', (req, res) => {
-    res.status(200).json(ticketsDatabase);
-});
-
-// 2. GET Route: Fetch a single ticket by ID (Critical for the Detail Workspace view)
-app.get('/api/tickets/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const ticket = ticketsDatabase.find(t => t.id === id);
-    
-    if (!ticket) {
-        return res.status(404).json({ message: "Ticket not found within tracking index." });
+// 1. GET Route: Fetch all entries from the cloud
+app.get('/api/tickets', async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM tickets ORDER BY created_at DESC;');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching tickets:', error);
+        res.status(500).json({ error: 'Internal Server Error while retrieving cloud records' });
     }
-    res.status(200).json(ticket);
 });
 
-// 3. POST Route: Initialize record logs securely
-app.post('/api/tickets', (req, res) => {
-    // SECURITY FIX: Generate an absolute monotonic auto-incrementing integer key
-    const nextId = ticketsDatabase.length > 0 
-        ? Math.max(...ticketsDatabase.map(t => t.id)) + 1 
-        : 1;
-
-    const newTicket = {
-        id: nextId,
-        title: req.body.title,
-        customer: req.body.customer,
-        email: req.body.email,
-        description: req.body.description,
-        status: req.body.status || "open",
-        notes: req.body.notes || ""
-    };
-    
-    ticketsDatabase.push(newTicket);
-    console.log("New Ticket Saved to Memory Sequence:", newTicket);
-    res.status(201).json(newTicket);
-});
-
-// 4. PUT Route: Update a specific ticket's details
-app.put('/api/tickets/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const ticket = ticketsDatabase.find(t => t.id === id);
-    
-    if (!ticket) {
-        return res.status(404).json({ message: "Ticket not found" });
+// 2. GET Route: Fetch a single ticket by ID
+app.get('/api/tickets/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await db.query('SELECT * FROM tickets WHERE id = $1;', [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Ticket not found within tracking index." });
+        }
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error fetching ticket detail:', error);
+        res.status(500).json({ error: 'Internal Server Error fetching row details' });
     }
-    
-    // Read updates sent from the frontend and update our database object securely
-    if (req.body.status) ticket.status = req.body.status;
-    if (req.body.notes !== undefined) ticket.notes = req.body.notes;
-    
-    console.log(`Ticket #${id} updated in DB successfully:`, ticket);
-    res.status(200).json(ticket);
 });
 
+// 3. POST Route: Initialize record logs securely in Supabase
+app.post('/api/tickets', async (req, res) => {
+    const { customer_name, customer_email, subject, description, notes } = req.body;
+    
+    // Generate a quick unique reference ticket string prefix (e.g., TKT-1717382)
+    const ticket_id = `TKT-${Date.now().toString().slice(-7)}`;
+
+    try {
+        const queryText = `
+            INSERT INTO tickets (ticket_id, customer_name, customer_email, subject, description, status, notes)
+            VALUES ($1, $2, $3, $4, $5, 'Open', $6)
+            RETURNING *;
+        `;
+        const values = [ticket_id, customer_name, customer_email, subject, description, notes || ''];
+        
+        const result = await db.query(queryText, values);
+        console.log("New Ticket Saved to Supabase Cloud:", result.rows[0]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error writing to database sequence:', error);
+        res.status(500).json({ error: 'Failed to create new live cloud record' });
+    }
+});
+
+// 4. PUT Route: Update a specific ticket's status or agent logs
+app.put('/api/tickets/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    try {
+        const queryText = `
+            UPDATE tickets 
+            SET status = $1, notes = $2
+            WHERE id = $3
+            RETURNING *;
+        `;
+        const values = [status, notes, id];
+        
+        const result = await db.query(queryText, values);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Ticket identifier not found" });
+        }
+        
+        console.log(`Ticket #${id} updated in Supabase successfully:`, result.rows[0]);
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error writing updates to cloud database:', error);
+        res.status(500).json({ error: 'Failed to apply structural parameter changes' });
+    }
+});
+
+// Single Unified Execution Listener
 app.listen(PORT, () => {
-    console.log(`🚀 Backend engine spinning smoothly on http://localhost:${PORT}`);
+    console.log(`🚀 Server is successfully running locally on port ${PORT}`);
+    console.log(`📡 Connected to your Supabase PostgreSQL cloud database!`);
 });

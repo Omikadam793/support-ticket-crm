@@ -7,21 +7,23 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
-  const [apiError, setApiError] = useState(null); // Tracks API connection errors
+  const [apiError, setApiError] = useState(null); 
   const [hoveredRowId, setHoveredRowId] = useState(null);
 
   // Fetch all tickets on component load
   useEffect(() => {
     setLoading(true);
     setApiError(null);
-    axios.get("https://support-crm-backend.onrender.com/api/tickets")
+    
+    // UPDATE: Now pointing to your active local backend engine on port 5000
+    axios.get("http://localhost:5000/api/tickets")
       .then(res => {
         setTickets(res.data);
         setLoading(false);
       })
       .catch(err => {
         console.error("Error fetching data:", err);
-        setApiError("Failed to fetch tickets from the backend. The server might be waking up—please try again shortly.");
+        setApiError("Failed to fetch tickets from the backend. Ensure your local Node server is running on port 5000.");
         setLoading(false);
       });
   }, []);
@@ -29,10 +31,13 @@ export default function Home() {
   // Filter logic
   const filteredTickets = tickets.filter(ticket => {
     const searchLower = searchTerm.toLowerCase();
+    
+    // UPDATE: Aligned properties to use database snake_case field keys (customer_name, subject)
     const matchesSearch = 
-      (ticket.customer && ticket.customer.toLowerCase().includes(searchLower)) ||
-      (ticket.title && ticket.title.toLowerCase().includes(searchLower)) ||
-      (ticket.id && ticket.id.toString().includes(searchLower));
+      (ticket.customer_name && ticket.customer_name.toLowerCase().includes(searchLower)) ||
+      (ticket.subject && ticket.subject.toLowerCase().includes(searchLower)) ||
+      (ticket.id && ticket.id.toString().includes(searchLower)) ||
+      (ticket.ticket_id && ticket.ticket_id.toLowerCase().includes(searchLower));
 
     let matchesStatus = true;
     if (statusFilter === "open") {
@@ -54,7 +59,6 @@ export default function Home() {
     return { ...base, backgroundColor: '#e1effe', color: '#1e429f' };
   };
 
-  // 1. ADDED: Clean, Centered Loading State UI
   if (loading) {
     return (
       <div style={{ padding: '60px 24px', textAlign: 'center', fontFamily: '"Inter", sans-serif', color: '#4a5568' }}>
@@ -69,7 +73,7 @@ export default function Home() {
         }} />
         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#2d3748' }}>Synchronizing Dashboard Content...</h3>
-        <p style={{ color: '#718096', fontSize: '14px', marginTop: '4px' }}>Connecting to cloud services. Free-tier servers may take up to 90 seconds to fully spin up.</p>
+        <p style={{ color: '#718096', fontSize: '14px', marginTop: '4px' }}>Connecting to local proxy port pipeline...</p>
       </div>
     );
   }
@@ -79,7 +83,6 @@ export default function Home() {
       <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '6px' }}>Support Agent Command Center</h2>
       <p style={{ color: '#718096', marginBottom: '24px', fontSize: '14px' }}>Monitor operational metrics, search active support payloads, and modify customer workspace accounts.</p>
 
-      {/* 2. ADDED: Basic API Error Handling Banner */}
       {apiError && (
         <div style={{ padding: '16px', backgroundColor: '#fff5f5', border: '1px solid #fed7d7', color: '#c53030', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>⚠️ <strong>API Error:</strong> {apiError}</span>
@@ -137,7 +140,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- Tickets Data Table Workspace & Smart Empty States --- */}
+      {/* --- Tickets Data Table Workspace --- */}
       {apiError ? (
         <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #edf2f7', color: '#a0aec0' }}>
           Data pipeline inaccessible due to network errors.
@@ -161,9 +164,9 @@ export default function Home() {
           <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', backgroundColor: '#ffffff', textAlign: 'left', fontSize: '14px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #edf2f7' }}>
-                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>ID</th>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Ticket ID</th>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Customer</th>
-                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Title</th>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Subject</th>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Status</th>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568', textAlign: 'center' }}>Action</th>
               </tr>
@@ -176,9 +179,10 @@ export default function Home() {
                   onMouseLeave={() => setHoveredRowId(null)}
                   style={{ borderBottom: '1px solid #edf2f7', backgroundColor: hoveredRowId === ticket.id ? '#f8fafc' : '#ffffff', transition: 'background-color 0.15s ease' }}
                 >
-                  <td style={{ padding: '16px', fontWeight: '600', color: '#718096' }}>#{ticket.id}</td>
-                  <td style={{ padding: '16px', fontWeight: '500' }}>{ticket.customer}</td>
-                  <td style={{ padding: '16px', color: '#4a5568' }}>{ticket.title}</td>
+                  {/* UPDATE: Displaying custom ticket_id string (e.g. TKT-38192) or falling back to raw sequence id */}
+                  <td style={{ padding: '16px', fontWeight: '600', color: '#718096' }}>{ticket.ticket_id || `#${ticket.id}`}</td>
+                  <td style={{ padding: '16px', fontWeight: '500' }}>{ticket.customer_name}</td>
+                  <td style={{ padding: '16px', color: '#4a5568' }}>{ticket.subject}</td>
                   <td style={{ padding: '16px' }}>
                     <span style={getStatusBadgeStyles(ticket.status)}>{ticket.status}</span>
                   </td>

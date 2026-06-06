@@ -1,21 +1,25 @@
-const sqlite3 = require("sqlite3").verbose();
+import pkg from 'pg';
+import dotenv from 'dotenv';
 
-const db = new sqlite3.Database("./crm.db");
+const { Pool } = pkg;
+dotenv.config();
 
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS tickets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ticket_id TEXT UNIQUE,
-      customer_name TEXT,
-      customer_email TEXT,
-      subject TEXT,
-      description TEXT,
-      status TEXT DEFAULT 'Open',
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+// Create a connection pool targeting your cloud PostgreSQL instance
+const db = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Necessary for cloud databases like Supabase/Neon
+  }
 });
 
-module.exports = db;
+// Verify connection capability on startup
+db.connect((err, client, release) => {
+  if (err) {
+    return console.error("Error acquiring client database connection:", err.stack);
+  }
+  console.log("Successfully connected to cloud PostgreSQL instance!");
+  release();
+});
+
+// Clean ES Module Export
+export default db;

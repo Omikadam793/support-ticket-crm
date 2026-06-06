@@ -21,7 +21,7 @@ export default function CreateTicket() {
     setValidationError("");
     setApiError("");
 
-    // 1. ADDED: Front-end Form Input Validation Error Checks
+    // Front-end Form Input Validation Error Checks
     if (!customer.trim() || !email.trim() || !title.trim() || !description.trim()) {
       setValidationError("Invalid form data. Please fill out all input parameters completely before submitting.");
       return;
@@ -32,18 +32,18 @@ export default function CreateTicket() {
       return;
     }
 
-    // Prepare ticket schema payload matching our backend expectations
+    // UPDATE: Prepare data keys matching your PostgreSQL database column requirements
     const newTicket = {
-      customer: customer.trim(),
-      email: email.trim(),
-      title: title.trim(),
+      customer_name: customer.trim(),
+      customer_email: email.trim(),
+      subject: title.trim(),
       description: description.trim()
     };
 
-    // 2. ADDED: Trigger Button Loading Execution State
     setIsSubmitting(true);
 
-    axios.post("https://support-crm-backend.onrender.com/api/tickets", newTicket)
+    // UPDATE: Pushing payload locally to port 5000 instead of cloud hosted render
+    axios.post("http://localhost:5000/api/tickets", newTicket)
       .then(res => {
         setIsSubmitting(false);
         // Navigate securely back to main operational panel on success
@@ -51,8 +51,7 @@ export default function CreateTicket() {
       })
       .catch(err => {
         console.error("Failed to post payload:", err);
-        // 3. ADDED: API Network Request Error Protection
-        setApiError("Failed API network request. Secure routing pipelines could not finalize records. Please verify server status.");
+        setApiError("Failed API network request. Secure routing pipelines could not finalize records. Please verify local server status.");
         setIsSubmitting(false);
       });
   };
