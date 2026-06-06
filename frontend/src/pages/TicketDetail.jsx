@@ -9,6 +9,10 @@ export default function TicketDetail() {
   const ticketId = parseInt(id); // Convert the text parameter ID into a clean number
   const navigate = useNavigate(); // Hook instance initialization for safe redirection
 
+  // Dynamic Base URL configuration tracker
+  // Falls back to localhost if the environment variable isn't set in your local system
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
   // States for storing data from the backend
   const [ticket, setTicket] = useState(null);
   const [status, setStatus] = useState("Open");
@@ -23,8 +27,8 @@ export default function TicketDetail() {
   // Step 1: Fetch the single ticket's current details on page load
   useEffect(() => {
     setLoading(true);
-    // Pointing to your local single ticket endpoint on port 5000
-    axios.get(`http://localhost:5000/api/tickets/${ticketId}`)
+    // Updated: Using the dynamic variable base pipeline
+    axios.get(`${API_BASE_URL}/api/tickets/${ticketId}`)
       .then(res => {
         setTicket(res.data);
         setStatus(res.data.status || "Open");
@@ -35,7 +39,7 @@ export default function TicketDetail() {
         console.error("Error fetching ticket detail:", err);
         setLoading(false);
       });
-  }, [ticketId]);
+  }, [ticketId, API_BASE_URL]);
 
   // Step 2: Handle the PUT Request Update
   const handleUpdate = () => {
@@ -45,8 +49,8 @@ export default function TicketDetail() {
       notes: notes
     };
 
-    // Triggering the HTTP PUT request to modify the specific PostgreSQL row locally
-    axios.put(`http://localhost:5000/api/tickets/${ticketId}`, updatedData)
+    // Updated: Triggering dynamic endpoint route maps safely
+    axios.put(`${API_BASE_URL}/api/tickets/${ticketId}`, updatedData)
       .then(res => {
         setMessage("Ticket updated successfully inside Supabase!");
         setIsUpdating(false);
@@ -72,7 +76,8 @@ export default function TicketDetail() {
     setIsDeleting(true);
     setMessage("Initializing records purge pipeline tracking execution...");
 
-    axios.delete(`http://localhost:5000/api/tickets/${ticketId}`)
+    // Updated: Triggering dynamic HTTP DELETE matching the target architecture
+    axios.delete(`${API_BASE_URL}/api/tickets/${ticketId}`)
       .then(res => {
         setMessage("Success! Row completely dropped. Redirecting back to home control panel...");
         setTimeout(() => {

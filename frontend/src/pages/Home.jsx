@@ -10,23 +10,27 @@ export default function Home() {
   const [apiError, setApiError] = useState(null); 
   const [hoveredRowId, setHoveredRowId] = useState(null);
 
+  // Dynamic Base URL configuration tracker
+  // Falls back to localhost port 5000 if the environment variable isn't set in your local system
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
   // Fetch all tickets on component load
   useEffect(() => {
     setLoading(true);
     setApiError(null);
     
-    // Pointing to your active local backend engine on port 5000
-    axios.get("http://localhost:5000/api/tickets")
+    // Updated: Pointing dynamically to either local environment or Render production cloud service
+    axios.get(`${API_BASE_URL}/api/tickets`)
       .then(res => {
         setTickets(res.data);
         setLoading(false);
       })
       .catch(err => {
         console.error("Error fetching data:", err);
-        setApiError("Failed to fetch tickets from the backend. Ensure your local Node server is running on port 5000.");
+        setApiError("Failed to fetch tickets from the backend database repository index. Verify cloud connectivity.");
         setLoading(false);
       });
-  }, []);
+  }, [API_BASE_URL]);
 
   // Filter logic
   const filteredTickets = tickets.filter(ticket => {
@@ -69,7 +73,7 @@ export default function Home() {
   };
 
   // ==========================================
-  // FEATURE 2 ADDED: REAL-TIME ANALYTICS MATH CALCULATIONS
+  // FEATURE 2: REAL-TIME ANALYTICS MATH CALCULATIONS
   // ==========================================
   const totalCount = tickets.length;
   
@@ -98,7 +102,7 @@ export default function Home() {
         }} />
         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#2d3748' }}>Synchronizing Dashboard Content...</h3>
-        <p style={{ color: '#718096', fontSize: '14px', marginTop: '4px' }}>Connecting to local proxy port pipeline...</p>
+        <p style={{ color: '#718096', fontSize: '14px', marginTop: '4px' }}>Connecting via environment registry maps...</p>
       </div>
     );
   }
@@ -151,7 +155,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- FEATURE 2 UPDATED: DYNAMIC ANALYTICS OVERVIEW RIBBON --- */}
+      {/* --- FEATURE 2 DISPLAY: DYNAMIC ANALYTICS OVERVIEW RIBBON --- */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
         
         {/* Card 1: Total volume reference */}
@@ -183,7 +187,7 @@ export default function Home() {
       {/* --- Tickets Data Table Workspace --- */}
       {apiError ? (
         <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #edf2f7', color: '#a0aec0' }}>
-          Data pipeline inaccessible due to network errors.
+          Data pipeline inaccessible due to cloud synchronization connection errors.
         </div>
       ) : tickets.length === 0 ? (
         <div style={{ padding: '60px 24px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '12px', border: '2px dashed #e2e8f0', color: '#4a5568', maxWidth: '600px', margin: '40px auto' }}>

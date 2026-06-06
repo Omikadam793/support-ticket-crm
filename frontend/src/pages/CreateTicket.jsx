@@ -5,12 +5,16 @@ import { useNavigate } from 'react-router-dom';
 export default function CreateTicket() {
   const navigate = useNavigate();
   
+  // Dynamic Base URL configuration tracker
+  // Falls back to localhost port 5000 if the environment variable isn't set in your local system
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  
   // Form input fields state
   const [customer, setCustomer] = useState("");
   const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState("Medium"); // <-- FEATURE 1 ADDED: State for tracking ticket urgency
+  const [priority, setPriority] = useState("Medium"); // State for tracking ticket urgency
 
   // Operational pipeline feedback states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,13 +43,13 @@ export default function CreateTicket() {
       customer_email: email.trim(),
       subject: title.trim(),
       description: description.trim(),
-      priority: priority // <-- FEATURE 1 ADDED: Sending chosen priority flag to express controller
+      priority: priority // Sending chosen priority flag to express controller
     };
 
     setIsSubmitting(true);
 
-    // Pushing payload locally to port 5000 instead of cloud hosted render
-    axios.post("http://localhost:5000/api/tickets", newTicket)
+    // Updated: Pushing payload dynamically using the environment configuration fallback
+    axios.post(`${API_BASE_URL}/api/tickets`, newTicket)
       .then(res => {
         setIsSubmitting(false);
         // Navigate securely back to main operational panel on success
@@ -53,7 +57,7 @@ export default function CreateTicket() {
       })
       .catch(err => {
         console.error("Failed to post payload:", err);
-        setApiError("Failed API network request. Secure routing pipelines could not finalize records. Please verify local server status.");
+        setApiError("Failed API network request. Secure routing pipelines could not finalize records. Please verify server status.");
         setIsSubmitting(false);
       });
   };
@@ -114,7 +118,7 @@ export default function CreateTicket() {
           />
         </div>
 
-        {/* --- FEATURE 1 ADDED: PRIORITY SELECTION DROPDOWN LAYOUT --- */}
+        {/* PRIORITY SELECTION DROPDOWN LAYOUT */}
         <div>
           <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#4a5568' }}>Ticket Priority Level:</label>
           <select 

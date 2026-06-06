@@ -6,10 +6,11 @@ import db from './database.js'; // Imports your connection pool configuration
 dotenv.config();
 
 const app = express();
+// Render assigns a dynamic port; fallback to 5000 for local development
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors()); // Allows your Vercel frontend to communicate with this API
 app.use(express.json());
 
 // Main status validation route
@@ -44,19 +45,15 @@ app.get('/api/tickets/:id', async (req, res) => {
     }
 });
 
-// 3. POST Route: Initialize record logs securely in Supabase with Priority tracking
+// 3. POST Route: Initialize record logs securely
 app.post('/api/tickets', async (req, res) => {
-    // Destructure priority from incoming request body parameters
     const { customer_name, customer_email, subject, description, notes, priority } = req.body;
     
-    // Generate a quick unique reference ticket string prefix (e.g., TKT-1717382)
+    // Generate a unique reference ticket string
     const ticket_id = `TKT-${Date.now().toString().slice(-7)}`;
-    
-    // Fallback default setting to safeguard baseline database structure execution
     const ticketPriority = priority || 'Medium';
 
     try {
-        // Included priority column field parameter keys into the INSERT tracking sequence
         const queryText = `
             INSERT INTO tickets (ticket_id, customer_name, customer_email, subject, description, priority, status, notes)
             VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7)
@@ -65,7 +62,6 @@ app.post('/api/tickets', async (req, res) => {
         const values = [ticket_id, customer_name, customer_email, subject, description, ticketPriority, notes || ''];
         
         const result = await db.query(queryText, values);
-        console.log("New Ticket Saved to Supabase Cloud:", result.rows[0]);
         res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Error writing to database sequence:', error);
@@ -73,7 +69,7 @@ app.post('/api/tickets', async (req, res) => {
     }
 });
 
-// 4. PUT Route: Update a specific ticket's status or agent logs
+// 4. PUT Route: Update a specific ticket
 app.put('/api/tickets/:id', async (req, res) => {
     const { id } = req.params;
     const { status, notes } = req.body;
@@ -93,7 +89,6 @@ app.put('/api/tickets/:id', async (req, res) => {
             return res.status(404).json({ message: "Ticket identifier not found" });
         }
         
-        console.log(`Ticket #${id} updated in Supabase successfully:`, result.rows[0]);
         res.status(200).json(result.rows[0]);
     } catch (error) {
         console.error('Error writing updates to cloud database:', error);
@@ -101,10 +96,7 @@ app.put('/api/tickets/:id', async (req, res) => {
     }
 });
 
-// ==========================================
-// FEATURE 3 ADDED: 5. DELETE Route
-// Permanently purge an obsolete ticket record from Supabase cloud
-// ==========================================
+// 5. DELETE Route: Permanently purge a ticket
 app.delete('/api/tickets/:id', async (req, res) => {
     const { id } = req.params;
 
@@ -116,7 +108,6 @@ app.delete('/api/tickets/:id', async (req, res) => {
             return res.status(404).json({ message: "Ticket record identifier not found in database registry." });
         }
 
-        console.log(`🗑️ Ticket #${id} permanently deleted from Supabase cloud registry.`);
         res.status(200).json({ 
             message: "Ticket permanently purged from core tracking instance safely.", 
             deletedTicket: result.rows[0] 
@@ -128,7 +119,8 @@ app.delete('/api/tickets/:id', async (req, res) => {
 });
 
 // Single Unified Execution Listener
-app.listen(PORT, () => {
-    console.log(`🚀 Server is successfully running locally on port ${PORT}`);
+// '0.0.0.0' allows external connections, required by Render
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server is successfully running on port ${PORT}`);
     console.log(`📡 Connected to your Supabase PostgreSQL cloud database!`);
 });
