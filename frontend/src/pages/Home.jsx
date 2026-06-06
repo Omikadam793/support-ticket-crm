@@ -15,7 +15,7 @@ export default function Home() {
     setLoading(true);
     setApiError(null);
     
-    // UPDATE: Now pointing to your active local backend engine on port 5000
+    // Pointing to your active local backend engine on port 5000
     axios.get("http://localhost:5000/api/tickets")
       .then(res => {
         setTickets(res.data);
@@ -32,7 +32,7 @@ export default function Home() {
   const filteredTickets = tickets.filter(ticket => {
     const searchLower = searchTerm.toLowerCase();
     
-    // UPDATE: Aligned properties to use database snake_case field keys (customer_name, subject)
+    // Aligned properties to use database snake_case field keys (customer_name, subject)
     const matchesSearch = 
       (ticket.customer_name && ticket.customer_name.toLowerCase().includes(searchLower)) ||
       (ticket.subject && ticket.subject.toLowerCase().includes(searchLower)) ||
@@ -58,6 +58,31 @@ export default function Home() {
     if (statusLower === 'pending' || statusLower === 'in progress') return { ...base, backgroundColor: '#fef3c7', color: '#92400e' };
     return { ...base, backgroundColor: '#e1effe', color: '#1e429f' };
   };
+
+  // Helper function to stylize custom priority levels dynamically
+  const getPriorityBadgeStyles = (priority) => {
+    const base = { padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', display: 'inline-block', letterSpacing: '0.5px' };
+    const priorityLower = priority?.toLowerCase();
+    if (priorityLower === 'high') return { ...base, backgroundColor: '#fed7d7', color: '#9b2c2c', border: '1px solid #feb2b2' };
+    if (priorityLower === 'low') return { ...base, backgroundColor: '#e2e8f0', color: '#4a5568', border: '1px solid #cbd5e0' };
+    return { ...base, backgroundColor: '#feebc8', color: '#c05621', border: '1px solid #fbd38d' }; // Medium Default
+  };
+
+  // ==========================================
+  // FEATURE 2 ADDED: REAL-TIME ANALYTICS MATH CALCULATIONS
+  // ==========================================
+  const totalCount = tickets.length;
+  
+  const openCount = tickets.filter(t => {
+    const s = t.status?.toLowerCase();
+    return s !== 'resolved' && s !== 'closed';
+  }).length;
+  
+  const closedCount = totalCount - openCount;
+
+  // Safeguard against Division-by-Zero errors if the database table is clean and empty
+  const openPercentage = totalCount > 0 ? Math.round((openCount / totalCount) * 100) : 0;
+  const closedPercentage = totalCount > 0 ? Math.round((closedCount / totalCount) * 100) : 0;
 
   if (loading) {
     return (
@@ -126,18 +151,33 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- CRM Metrics Overview Ribbons --- */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', flexWrap: 'wrap' }}>
-        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: '1 1 200px', border: '1px solid #e2e8f0', borderLeft: '4px solid #2b6cb0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <strong style={{ color: '#4a5568', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Managed Cases</strong>
-          <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>{tickets.length}</div>
+      {/* --- FEATURE 2 UPDATED: DYNAMIC ANALYTICS OVERVIEW RIBBON --- */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
+        
+        {/* Card 1: Total volume reference */}
+        <div style={{ padding: '20px', backgroundColor: '#f8fafc', borderRadius: '10px', flex: '1 1 180px', border: '1px solid #e2e8f0', borderLeft: '5px solid #2b6cb0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <strong style={{ color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Managed Cases</strong>
+          <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>{totalCount}</div>
         </div>
-        <div style={{ padding: '20px', backgroundColor: '#f7fafc', borderRadius: '8px', flex: '1 1 200px', border: '1px solid #e2e8f0', borderLeft: '4px solid #dd6b20', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <strong style={{ color: '#4a5568', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active / Open Tickets</strong>
-          <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>
-            {tickets.filter(t => t.status?.toLowerCase() !== 'resolved' && t.status?.toLowerCase() !== 'closed').length}
+
+        {/* Card 2: Active Backlog Tracking + Percentage */}
+        <div style={{ padding: '20px', backgroundColor: '#f8fafc', borderRadius: '10px', flex: '1 1 180px', border: '1px solid #e2e8f0', borderLeft: '5px solid #dd6b20', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <strong style={{ color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active Backlog</strong>
+            <span style={{ fontSize: '12px', color: '#dd6b20', fontWeight: '700', backgroundColor: '#fffaf0', padding: '2px 6px', borderRadius: '4px' }}>{openPercentage}%</span>
           </div>
+          <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>{openCount} <span style={{ fontSize: '14px', fontWeight: '500', color: '#718096' }}>tickets</span></div>
         </div>
+
+        {/* Card 3: Resolution Success Velocity + Percentage */}
+        <div style={{ padding: '20px', backgroundColor: '#f8fafc', borderRadius: '10px', flex: '1 1 180px', border: '1px solid #e2e8f0', borderLeft: '5px solid #38a169', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <strong style={{ color: '#4a5568', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Resolution Rate</strong>
+            <span style={{ fontSize: '12px', color: '#38a169', fontWeight: '700', backgroundColor: '#f0fff4', padding: '2px 6px', borderRadius: '4px' }}>{closedPercentage}%</span>
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '6px', color: '#1a202c' }}>{closedCount} <span style={{ fontSize: '14px', fontWeight: '500', color: '#718096' }}>closed</span></div>
+        </div>
+
       </div>
 
       {/* --- Tickets Data Table Workspace --- */}
@@ -167,6 +207,7 @@ export default function Home() {
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Ticket ID</th>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Customer</th>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Subject</th>
+                <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Priority</th>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568' }}>Status</th>
                 <th style={{ padding: '16px', fontWeight: '600', color: '#4a5568', textAlign: 'center' }}>Action</th>
               </tr>
@@ -179,10 +220,14 @@ export default function Home() {
                   onMouseLeave={() => setHoveredRowId(null)}
                   style={{ borderBottom: '1px solid #edf2f7', backgroundColor: hoveredRowId === ticket.id ? '#f8fafc' : '#ffffff', transition: 'background-color 0.15s ease' }}
                 >
-                  {/* UPDATE: Displaying custom ticket_id string (e.g. TKT-38192) or falling back to raw sequence id */}
                   <td style={{ padding: '16px', fontWeight: '600', color: '#718096' }}>{ticket.ticket_id || `#${ticket.id}`}</td>
                   <td style={{ padding: '16px', fontWeight: '500' }}>{ticket.customer_name}</td>
                   <td style={{ padding: '16px', color: '#4a5568' }}>{ticket.subject}</td>
+                  
+                  <td style={{ padding: '16px' }}>
+                    <span style={getPriorityBadgeStyles(ticket.priority)}>{ticket.priority || 'Medium'}</span>
+                  </td>
+
                   <td style={{ padding: '16px' }}>
                     <span style={getStatusBadgeStyles(ticket.status)}>{ticket.status}</span>
                   </td>

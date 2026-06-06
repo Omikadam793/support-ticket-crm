@@ -10,6 +10,7 @@ export default function CreateTicket() {
   const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Medium"); // <-- FEATURE 1 ADDED: State for tracking ticket urgency
 
   // Operational pipeline feedback states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,17 +33,18 @@ export default function CreateTicket() {
       return;
     }
 
-    // UPDATE: Prepare data keys matching your PostgreSQL database column requirements
+    // Prepare data keys matching your PostgreSQL database column requirements
     const newTicket = {
       customer_name: customer.trim(),
       customer_email: email.trim(),
       subject: title.trim(),
-      description: description.trim()
+      description: description.trim(),
+      priority: priority // <-- FEATURE 1 ADDED: Sending chosen priority flag to express controller
     };
 
     setIsSubmitting(true);
 
-    // UPDATE: Pushing payload locally to port 5000 instead of cloud hosted render
+    // Pushing payload locally to port 5000 instead of cloud hosted render
     axios.post("http://localhost:5000/api/tickets", newTicket)
       .then(res => {
         setIsSubmitting(false);
@@ -110,6 +112,21 @@ export default function CreateTicket() {
             disabled={isSubmitting}
             style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none' }}
           />
+        </div>
+
+        {/* --- FEATURE 1 ADDED: PRIORITY SELECTION DROPDOWN LAYOUT --- */}
+        <div>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#4a5568' }}>Ticket Priority Level:</label>
+          <select 
+            value={priority} 
+            onChange={(e) => setPriority(e.target.value)}
+            disabled={isSubmitting}
+            style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none', backgroundColor: '#fff', cursor: 'pointer' }}
+          >
+            <option value="Low">Low Priority</option>
+            <option value="Medium">Medium Priority</option>
+            <option value="High">High Priority</option>
+          </select>
         </div>
 
         <div>

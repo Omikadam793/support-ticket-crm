@@ -44,20 +44,25 @@ app.get('/api/tickets/:id', async (req, res) => {
     }
 });
 
-// 3. POST Route: Initialize record logs securely in Supabase
+// 3. POST Route: Initialize record logs securely in Supabase with Priority tracking
 app.post('/api/tickets', async (req, res) => {
-    const { customer_name, customer_email, subject, description, notes } = req.body;
+    // Destructure priority from incoming request body parameters
+    const { customer_name, customer_email, subject, description, notes, priority } = req.body;
     
     // Generate a quick unique reference ticket string prefix (e.g., TKT-1717382)
     const ticket_id = `TKT-${Date.now().toString().slice(-7)}`;
+    
+    // Fallback default setting to safeguard baseline database structure execution
+    const ticketPriority = priority || 'Medium';
 
     try {
+        // Included priority column field parameter keys into the INSERT tracking sequence
         const queryText = `
-            INSERT INTO tickets (ticket_id, customer_name, customer_email, subject, description, status, notes)
-            VALUES ($1, $2, $3, $4, $5, 'Open', $6)
+            INSERT INTO tickets (ticket_id, customer_name, customer_email, subject, description, priority, status, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, 'Open', $7)
             RETURNING *;
         `;
-        const values = [ticket_id, customer_name, customer_email, subject, description, notes || ''];
+        const values = [ticket_id, customer_name, customer_email, subject, description, ticketPriority, notes || ''];
         
         const result = await db.query(queryText, values);
         console.log("New Ticket Saved to Supabase Cloud:", result.rows[0]);
@@ -93,6 +98,32 @@ app.put('/api/tickets/:id', async (req, res) => {
     } catch (error) {
         console.error('Error writing updates to cloud database:', error);
         res.status(500).json({ error: 'Failed to apply structural parameter changes' });
+    }
+});
+
+// ==========================================
+// FEATURE 3 ADDED: 5. DELETE Route
+// Permanently purge an obsolete ticket record from Supabase cloud
+// ==========================================
+app.delete('/api/tickets/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const queryText = 'DELETE FROM tickets WHERE id = $1 RETURNING *;';
+        const result = await db.query(queryText, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Ticket record identifier not found in database registry." });
+        }
+
+        console.log(`🗑️ Ticket #${id} permanently deleted from Supabase cloud registry.`);
+        res.status(200).json({ 
+            message: "Ticket permanently purged from core tracking instance safely.", 
+            deletedTicket: result.rows[0] 
+        });
+    } catch (error) {
+        console.error('Error handling database deletion payload:', error);
+        res.status(500).json({ error: 'Internal Server Error executing row drop operation' });
     }
 });
 
